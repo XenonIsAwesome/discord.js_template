@@ -11,8 +11,10 @@ const fs = require('fs');
 
 
 client.on('ready', async () => {
+    // fetching existing slash commands from discord api
     const slashCommands = await getApp(client, guildId).commands.get();
 
+    // initiation of normal commands
     client.commands = new Collection();
     const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
     
@@ -21,6 +23,7 @@ client.on('ready', async () => {
         client.commands.set(command.name, command);
     }
 
+    // initiation of slash commands
     client.slashCommands = new Collection();
     const slashCommandFiles = fs.readdirSync('./commands/slash').filter(file => file.endsWith('.js'));
     
@@ -36,6 +39,7 @@ client.on('ready', async () => {
         else { console.info(`[slash] skipped over ${cmd.structure.data.name}`); }
     }
 
+    // initiation of component commands
     client.componentCommands = new Collection();
     const componentCommandFiles = fs.readdirSync('./commands/component/').filter(file => file.endsWith('.js'));
         
@@ -51,11 +55,11 @@ client.on('ready', async () => {
         else { console.info(`[component] skipped over ${cmd.structure.data.name}`); }
     }
 
-    client.whitelist = [];
     console.info(`Ready and logged in as ${client.user.tag}!`);
 });
 
 
+// normal commands
 client.on('message', msg => {
     if (!msg.content.startsWith(process.env.PREFIX) || msg.author.bot) return;
 
@@ -73,10 +77,11 @@ client.on('message', msg => {
 });
 
 
+// slash and component commands
 client.ws.on('INTERACTION_CREATE', async(interaction) => {
     if (interaction.data.name) {
         try {
-            await client.slashCommands.get(interaction.data.name).execute(client, interaction, interaction.data.options);
+            await client.slashCommands.get(interaction.data.name).execute(client, interaction, parseArgs(interaction.data.options));
         } catch (error) {
             console.error(error);
             interactionReply(client, interaction, {
